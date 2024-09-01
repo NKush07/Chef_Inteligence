@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { useAuthContext } from "../../../hooks/useAuthContext";
 import { toast } from "react-hot-toast";
 import { darkColors, lightColors } from "../data/homeTheme";
@@ -8,209 +8,268 @@ import { IoIosAdd, IoIosClose } from "react-icons/io";
 // import Overview from "../components/Overview";
 
 export default function Home({ lightMode }) {
-    const navigate = useNavigate()
-    const { user } = useAuthContext();
-    const colors = lightMode ? lightColors : darkColors;
-    let userData;
-    try { userData = JSON.parse(localStorage.getItem('user')); }
-    catch (error) {
-        userData = {};
-    }
+  const navigate = useNavigate();
+  const { user } = useAuthContext();
+  const colors = lightMode ? lightColors : darkColors;
+  let userData;
+  try {
+    userData = JSON.parse(localStorage.getItem("user"));
+  } catch (error) {
+    userData = {};
+  }
 
-    // const [openOverview, setOpenOverview] = useState(false);
+  // const [openOverview, setOpenOverview] = useState(false);
 
-    const [ingredientData, setIngredientData] = useState([
-        { ingredient: "", quantity: "", unit: "" },
+  const [ingredientData, setIngredientData] = useState([
+    { ingredient: "", quantity: "", unit: "" },
+  ]);
+
+  const handleInputChange = (index, event) => {
+    if (!userData) return toast.error("Please login to proceed!");
+    const { name, value } = event.target;
+    const newIngredientData = ingredientData.map((row, i) => {
+      if (i !== index) return row;
+      return { ...row, [name]: value };
+    });
+    setIngredientData(newIngredientData);
+  };
+
+  const handleAddIngredient = () => {
+    if (!userData) return toast.error("Please login to proceed!");
+    setIngredientData([
+      ...ingredientData,
+      { ingredient: "", quantity: "", unit: "" },
     ]);
+  };
 
-    const handleInputChange = (index, event) => {
-        if (!user) return toast.error('Please login to proceed!');
-        const { name, value } = event.target;
-        const newIngredientData = ingredientData.map((row, i) => {
-            if (i !== index) return row;
-            return { ...row, [name]: value };
-        });
-        setIngredientData(newIngredientData);
-    };
+  const [equipmentData, setEquipmentData] = useState([]);
+  const [newEquipment, setNewEquipment] = useState("");
 
-    const handleAddIngredient = () => {
-        if (!user) return toast.error('Please login to proceed!');
-        setIngredientData([...ingredientData, { ingredient: "", quantity: "", unit: "" }]);
-    };
+  const handleAddEquipment = () => {
+    if (!userData) return toast.error("Please login to proceed!");
+    if (!newEquipment.trim()) return;
+    setEquipmentData([...equipmentData, newEquipment]);
+    setNewEquipment("");
+  };
 
-    const [equipmentData, setEquipmentData] = useState([]);
-    const [newEquipment, setNewEquipment] = useState('');
+  const handleStartProcess = async (e) => {
+    e.preventDefault();
 
-    const handleAddEquipment = () => {
-        if (!user) return toast.error('Please login to proceed!');
-        if (!newEquipment.trim()) return;
-        setEquipmentData([...equipmentData, newEquipment]);
-        setNewEquipment('');
-    };
-
-    const handleStartProcess = async (e) => {
-        e.preventDefault();
-
-        if (!user) return toast.error('Please login to proceed!');
-        for (let i = 0; i < ingredientData.length; i++) {
-            const row = ingredientData[i];
-            if (!row.ingredient || !row.quantity) {
-                let missingData = [];
-                if (!row.ingredient) missingData.push("Ingredient");
-                if (!row.quantity) missingData.push("Quantity");
-                if (!row.unit) missingData.push("Unit");
-                return toast.error(`Row ${i + 1} is missing: ${missingData.join(", ")}`);
-            }
-        }
-
-        const data = {
-            user: {
-                email: user.email,
-                name: user.name,
-                user_id: user.user_id
-            },
-            ingredients: ingredientData,
-            equipments: equipmentData
-        }
-
-        await fetch(`${import.meta.env.VITE_API_URL}/start-process`, {
-            method: "POST",
-            headers: {
-                Authorization: `Bearer ${userData.access_token}`,
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify(data),
-        }).then(() => {
-            toast.success('Started processing...');
-            setIngredientData([{ ingredient: "", quantity: "" }]);
-            navigate('generatedDish');
-        }).catch(() => toast.error('Something went wrong.'));
+    if (!userData) return toast.error("Please login to proceed!");
+    for (let i = 0; i < ingredientData.length; i++) {
+      const row = ingredientData[i];
+      if (!row.ingredient || !row.quantity) {
+        let missingData = [];
+        if (!row.ingredient) missingData.push("Ingredient");
+        if (!row.quantity) missingData.push("Quantity");
+        if (!row.unit) missingData.push("Unit");
+        return toast.error(
+          `Row ${i + 1} is missing: ${missingData.join(", ")}`
+        );
+      }
     }
 
-    return (
-        <>
-            <div className="flex flex-col w-full md:w-5/6 mx-auto min-h-[calc(100dvh-56px)] items-center justify-center px-2">
-                <img src='/assets/CompanyLogo.png' alt="" className="w-36 h-36" />
-                <Typewriter text="Chef Intelligence" delay={200} />
-                <p className={`${colors.textParagraph} text-base lg:text-lg  mt-4 mb-0 text-center font-semibold max-w-2xl`}>
-                    Elevate your culinary skills with the power of AI. Search for
-                    ingredients and equipment effortlessly to create masterful dishes.
+    const data = {
+      user: {
+        email: userData.email,
+        name: userData.name,
+        user_id: userData.user_id,
+      },
+      ingredients: ingredientData,
+      equipments: equipmentData,
+    };
+
+    await fetch(`${import.meta.env.VITE_API_URL}/start-process`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${userData.access_token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(data),
+    })
+      .then(() => {
+        toast.success("Started processing...");
+        setIngredientData([{ ingredient: "", quantity: "" }]);
+        navigate("generatedDish");
+      })
+      .catch(() => toast.error("Something went wrong."));
+  };
+
+  return (
+    <>
+      <div
+        className={`${colors.back} flex flex-col items-center justify-center min-h-screen w-full px-4`}
+      >
+        <div
+          className={`${colors.blackColor} w-full max-w-4xl rounded-lg shadow-lg p-8 my-8`}
+        >
+          <Typewriter text="Chef Intelligence" delay={200} />
+          <br /> <br />
+          <p
+            className={`${colors.textParagraph} text-lg text-[#003D4C] mb-8 text-left`}
+          >
+            Elevate your culinary skills with the power of AI. Search for
+            ingredients and equipment effortlessly to create masterful dishes.
+            Start your culinary adventure today with AI Chef Master!
+          </p>
+          <h2 className="text-lg font-medium text-[#003D4C] mb-4">
+            Recommended Dishes
+          </h2>
+          {/*  */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+            <Link to="/sec-intelligence">
+              <div className="bg-[#F3F3F3] rounded-lg p-6 cursor-pointer hover:bg-[#E6E6E6] transition-colors">
+                <div className="h-48 mb-4 overflow-hidden rounded">
+                  <img
+                    src="https://umamidays.com/wp-content/uploads/2021/05/salmon-lemon-garlic-sauce.jpg"
+                    alt="dish2"
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <p className="text-[#003D4C]">
+                  Grilled Salmon with Lemon Butter
                 </p>
-                <p className={`${colors.textParagraph} text-lg mb-12 lg:mb-4 text-center hidden lg:block font-semibold`}>
-                    Start your culinary adventure today with AI Chef Master!
+              </div>
+            </Link>
+            <Link to="/sec-intelligence">
+              <div className="bg-[#F3F3F3] rounded-lg p-6 cursor-pointer hover:bg-[#E6E6E6] transition-colors">
+                <div className="h-48 mb-4 overflow-hidden rounded">
+                  <img
+                    src="https://www.simplyrecipes.com/thmb/YuOMkKKjH9ezQGCetN7yAmVFANc=/2000x1333/filters:no_upscale():max_bytes(150000):strip_icc()/__opt__aboutcom__coeus__resources__content_migration__simply_recipes__uploads__2012__11__Vegetarian-Lasagna-LEAD-1-6173a71bfd1347aa8d7659150e87b8f4.jpg"
+                    alt="dish2"
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <p className="text-[#003D4C]">
+                  Vegetarian Spinach and Mushroom Lasagna
                 </p>
-
-                <div className={`${colors.backgroundOfDiv} max-w-[690px] w-full shadow-xl rounded-xl p-3 justify-center lg:mt-2 mt-12`}>
-                    <p className="w-full font-semibold text-2xl text-center">Ingredients</p>
-                    {ingredientData.map((row, index) => (
-                        <div key={index} className="gap-2 mb-2">
-                            <div className="flex-col flex gap-3 lg:flex-row mt-4">
-                                <input
-                                    className={`flex p-2 border border-gray-300 rounded placeholder-gray-400 focus:outline-none focus:border-yellow-500 ${colors.inputBackground} ${colors.inputText}`}
-                                    type="text"
-                                    placeholder="Name"
-                                    name="ingredient"
-                                    value={row.ingredient}
-                                    onChange={(event) => handleInputChange(index, event)}
-                                    required
-                                />
-                                <input
-                                    className={`flex p-2 border border-gray-300 rounded placeholder-gray-400 focus:outline-none focus:border-yellow-500 ${colors.inputBackground} ${colors.inputText}`}
-                                    type="number"
-                                    placeholder="Quantity"
-                                    name="quantity"
-                                    value={row.quantity}
-                                    onChange={(event) => handleInputChange(index, event)}
-                                    required
-                                />
-                                <select
-                                    placeholder="Quantity"
-                                    name="unit"
-                                    value={row.unit}
-                                    onChange={(event) => handleInputChange(index, event)}
-                                    className={`bg-transparent md:w-32 flex p-2 border border-gray-300  rounded placeholder-gray-400 focus:outline-none focus:border-yellow-500 ${colors.inputBackground} ${colors.inputText}`}
-                                >
-
-                                    <option value="" >Select Unit</option>
-                                    <option value="gram">gram</option>
-                                    <option value="mL">mL</option>
-                                    <option value="teaspoon">teaspoon</option>
-                                    <option value="tablespoon">tablespoon</option>
-                                    <option value="whole">piece</option>
-                                </select>
-                            </div>
-                        </div>
-                    ))}
-
-                    <div className="flex justify-center gap-2 mt-4 lg:mt-6 items-center align-middle">
-                        <button
-                            onClick={handleAddIngredient}
-                            className={`py-2 px-4 ${colors.buttonBackground} ${colors.buttonHoverBackground} ${colors.buttonTextColor} ${colors.buttonHoverTextColor} font-bold rounded focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-50`}
-                        >
-                            Add More
-                        </button>
-                    </div>
+              </div>
+            </Link>
+            <Link to="/sec-intelligence">
+              <div className="bg-[#F3F3F3] rounded-lg p-6 cursor-pointer hover:bg-[#E6E6E6] transition-colors">
+                <div className="h-48 mb-4 overflow-hidden rounded">
+                  <img
+                    src="https://www.licious.in/blog/wp-content/uploads/2020/12/Tandoori-Chicken.jpg"
+                    alt="dish2"
+                    className="w-full h-full object-cover"
+                  />
                 </div>
-
-
-                <div className={`${colors.backgroundOfDiv} max-w-[690px] w-full shadow-xl rounded-xl p-3 justify-center mt-8`}>
-                    <p className="w-full font-semibold text-2xl text-center">Equipments</p>
-                    <div className="mt-[20px] w-full flex items-center gap-4">
-                        <input
-                            name="equipments"
-                            onChange={e => {
-                                if (!user) return toast.error('Please login to proceed!');
-                                setNewEquipment(e.target.value);
-                            }}
-                            placeholder="eg. Oven"
-                            className={`${colors.inputBackground} ${colors.inputText} flex-1 border border-gray-300 px-2 py-1 placeholder:italic text-lg rounded-md placeholder:text-gray-400 outline-none focus:border-orange-400`}
-                            value={newEquipment}
-                        />
-                        <button onClick={handleAddEquipment} type="button" className="">
-                            <IoIosAdd className="text-green-500 text-3xl rounded-full border border-green-600 hover:bg-green-200" />
-                        </button>
-                    </div>
-                    <ul className="flex flex-wrap gap-2 my-2 w-full">
-                        {equipmentData.map((equipment, index) => (
-                            <li
-                                key={index}
-                                className="bg-amber-300 font-medium flex flex-row rounded-md items-center gap-2 px-2 py-1"
-                            >
-                                <span>{equipment}</span>
-                                <IoIosClose
-                                    onClick={() => {
-                                        const updatedEquipmentData = equipmentData.filter((_, i) => i !== index);
-                                        setEquipmentData(updatedEquipmentData);
-                                    }}
-                                    className="text-xl cursor-pointer border border-black hover:bg-amber-500 rounded-full"
-                                />
-                            </li>
-                        ))}
-                    </ul>
-                </div>
-
-                <div className="mt-12 mb-4 flex gap-4 items-center">
-                    {/* <button
-                        onClick={() => {
-                            document.body.style.overflow = "hidden";
-                            setOpenOverview(true);
-                        }}
-                        className={`${colors.overviewButton} ${colors.buttonHoverBackground} ${colors.buttonTextColor} ${colors.buttonHoverTextColor} w-fit mx-auto text-white font-bold py-3 px-4 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-50 ${colors.buttonHoverTextColor}`}
-                    >
-                        Overview
-                    </button> */}
-                    <button
-                        onClick={handleStartProcess}
-                        className={`${colors.button} ${colors.buttonHoverBackground} ${colors.buttonTextColor} ${colors.buttonHoverTextColor} w-fit mx-auto text-white font-bold py-3 px-4 rounded-xl focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-50 ${colors.buttonHoverTextColor}`}
-                    >
-                        Start To Process
-                    </button>
-                </div>
+                <p className="text-[#003D4C]">
+                  Spicy Thai Chicken With Special Sauce
+                </p>
+              </div>
+            </Link>
+          </div>
+          {/* */}
+          <div
+            className={`${colors.blackColor} grid grid-cols-1 md:grid-cols-3 gap-6 mb-6`}
+          >
+            <div className="bg-[#F3F3F3] rounded-lg p-6 cursor-pointer hover:bg-[#E6E6E6] transition-colors">
+              <h2 className="text-lg font-medium text-[#003D4C] mb-2">Name</h2>
+              <input
+                className="w-full p-2 border border-gray-300 rounded placeholder-gray-400 focus:outline-none focus:border-yellow-500 bg-white text-[#003D4C]"
+                type="text"
+                placeholder="Ingredient name"
+                name="ingredient"
+                value={ingredientData[0]?.ingredient || ""}
+                onChange={(event) => handleInputChange(0, event)}
+                required
+              />
             </div>
 
-            {/* {openOverview && <Overview setOpenOverview={setOpenOverview} ingredientData={ingredientData} equipmentData={equipmentData} />} */}
-        </>
-    );
+            <div className="bg-[#F3F3F3] rounded-lg p-6 cursor-pointer hover:bg-[#E6E6E6] transition-colors">
+              <h2 className="text-lg font-medium text-[#003D4C] mb-2">
+                Quantity
+              </h2>
+              <input
+                className="w-full p-2 border border-gray-300 rounded placeholder-gray-400 focus:outline-none focus:border-yellow-500 bg-white text-[#003D4C]"
+                type="number"
+                placeholder="Quantity"
+                name="quantity"
+                value={ingredientData[0]?.quantity || ""}
+                onChange={(event) => handleInputChange(0, event)}
+                required
+              />
+            </div>
+
+            <div className="bg-[#F3F3F3] rounded-lg p-6 cursor-pointer hover:bg-[#E6E6E6] transition-colors">
+              <h2 className="text-lg font-medium text-[#003D4C] mb-2">Unit</h2>
+              <select
+                name="unit"
+                value={ingredientData[0]?.unit || ""}
+                onChange={(event) => handleInputChange(0, event)}
+                className="w-full p-2 border border-gray-300 rounded placeholder-gray-400 focus:outline-none focus:border-yellow-500 bg-white text-[#003D4C]"
+              >
+                <option value="">Select Unit</option>
+                <option value="gram">gram</option>
+                <option value="mL">mL</option>
+                <option value="teaspoon">teaspoon</option>
+                <option value="tablespoon">tablespoon</option>
+                <option value="whole">piece</option>
+              </select>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-1 gap-6 mb-6">
+            <div className="bg-[#F3F3F3] rounded-lg p-6 cursor-pointer hover:bg-[#E6E6E6] transition-colors">
+              <h2 className="text-lg font-medium text-[#003D4C] mb-4">
+                Equipments
+              </h2>
+              <div className="flex items-center gap-4 mb-4">
+                <input
+                  name="equipments"
+                  onChange={(e) => setNewEquipment(e.target.value)}
+                  placeholder="eg. Oven"
+                  className="flex-1 p-2 border border-gray-300 rounded placeholder-gray-400 focus:outline-none focus:border-yellow-500 bg-white text-[#003D4C]"
+                  value={newEquipment}
+                />
+                <button
+                  onClick={handleAddEquipment}
+                  type="button"
+                  className="bg-green-500 text-white p-2 rounded-full"
+                >
+                  <IoIosAdd className="text-2xl" />
+                </button>
+              </div>
+              <ul className="flex flex-wrap gap-2">
+                {equipmentData.map((equipment, index) => (
+                  <li
+                    key={index}
+                    className="bg-amber-300 font-medium flex items-center gap-2 px-2 py-1 rounded-md"
+                  >
+                    <span>{equipment}</span>
+                    <IoIosClose
+                      onClick={() => {
+                        const updatedEquipmentData = equipmentData.filter(
+                          (_, i) => i !== index
+                        );
+                        setEquipmentData(updatedEquipmentData);
+                      }}
+                      className="text-xl cursor-pointer hover:bg-amber-500 rounded-full"
+                    />
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+          <div className="flex justify-center gap-4">
+            <button
+              onClick={() => setOpenOverview(true)}
+              className="bg-[#FF7F00] hover:bg-[#E06E00] text-white font-bold py-3 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-50"
+            >
+              Overview
+            </button>
+            <button
+              onClick={handleStartProcess}
+              className="bg-[#003D4C] hover:bg-[#002A35] text-white font-bold py-3 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-50"
+            >
+              Start to Process
+            </button>
+          </div>
+        </div>
+      </div>
+      {/* {openOverview && <Overview setOpenOverview={setOpenOverview} ingredientData={ingredientData} equipmentData={equipmentData} />} */}
+    </>
+  );
 }
 
 // {

@@ -28,6 +28,7 @@ export const useLogin = () => {
             dispatch({ type: 'LOGIN', payload: json })
             toast.success("Logged in Successfully")
             setIsLoading(false)
+            // navigate('/');
         }
     }
 

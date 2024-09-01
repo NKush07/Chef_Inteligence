@@ -23,7 +23,7 @@ const Login = ({ isAuthenticated }) => {
         `${"http://localhost:8000/auth/social/o/google-oauth2/?redirect_uri=http://localhost:5173/login/"}`
       );
       window.location.replace(res.data.authorization_url);
-    } catch (error) { }
+    } catch (error) {}
   };
 
   const dataFetch = async (code, state) => {

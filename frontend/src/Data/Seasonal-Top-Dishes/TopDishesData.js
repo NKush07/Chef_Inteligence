@@ -29,7 +29,7 @@ const TopDishesData = [
   {
     dishName: "Paneer Pulav",
     dishImage:
-      "https://foodquench.com/wp-content/uploads/2022/03/paneermasalapulao_700.jpg",
+      "https://www.whiskaffair.com/wp-content/uploads/2019/08/Paneer-Pulao-1-3.jpg",
     time: "120",
     rating: "4",
     description:

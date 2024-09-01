@@ -9,7 +9,7 @@ import { Toaster } from 'react-hot-toast'
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <AuthContextProvider>
-    <App />
+     <App/>
     <Toaster />
   </AuthContextProvider>
 )

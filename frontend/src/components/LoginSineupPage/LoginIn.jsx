@@ -44,6 +44,7 @@ function LoginIn() {
         else if (!password) return toast.error("Enter your password");
 
         await login(email, password);
+        navigate('/');
     };
 
     const handleForgetPassword = () => {
